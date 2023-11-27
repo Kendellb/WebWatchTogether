@@ -1,4 +1,4 @@
-let APP_ID = "YOU-APP-ID"
+let APP_ID = "3736d2c40d9b4e72bd704881f8cc53c4"
 
 
 let token = null;
@@ -40,6 +40,7 @@ let init = async () => {
     client = await AgoraRTM.createInstance(APP_ID)
     await client.login({uid, token})
 
+    //index.html?room=234234
     channel = client.createChannel(roomId)
     await channel.join()
 
