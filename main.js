@@ -1,11 +1,14 @@
 let APP_ID = "3736d2c40d9b4e72bd704881f8cc53c4"
 
 
+
 let token = null;
 let uid = String(Math.floor(Math.random() * 10000))
 
 let client;
 let channel;
+
+let sharingScreen = false;
 
 let queryString = window.location.search
 let urlParams = new URLSearchParams(queryString)
@@ -99,6 +102,7 @@ let createPeerConnection = async (MemberId) => {
     if(!localStream){
         localStream = await navigator.mediaDevices.getUserMedia({video:true, audio:false})
         document.getElementById('user-1').srcObject = localStream
+        document.getElementById('screen-u1')
     }
 
     localStream.getTracks().forEach((track) => {
@@ -175,10 +179,54 @@ let toggleMic = async () => {
         document.getElementById('mic-btn').style.backgroundColor = 'rgb(179, 102, 249, .9)'
     }
 }
+
+let screenShare = async (e) => {
+        let screenButton = e.currentTarget
+        
+    
+        if(!sharingScreen){
+            sharingScreen = true
+    
+            screenButton.classList.add('active')
+            
+    
+            localScreenTracks = await AgoraRTC.createScreenVideoTrack()
+    
+            document.getElementById(`user-container-${uid}`).remove()
+            displayFrame.style.display = 'block'
+    
+            let player = `<div class="video__container" id="user-container-${uid}">
+                    <div class="video-player" id="user-${uid}"></div>
+                </div>`
+    
+            displayFrame.insertAdjacentHTML('beforeend', player)
+            document.getElementById(`user-container-${uid}`).addEventListener('click', expandVideoFrame)
+    
+            userIdInDisplayFrame = `user-container-${uid}`
+            localScreenTracks.play(`user-${uid}`)
+    
+            await client.unpublish([localTracks[1]])
+            await client.publish([localScreenTracks])
+    
+            let videoFrames = document.getElementsByClassName('video__container')
+            for(let i = 0; videoFrames.length > i; i++){
+                if(videoFrames[i].id != userIdInDisplayFrame){
+                  videoFrames[i].style.height = '100px'
+                  videoFrames[i].style.width = '100px'
+                }
+              }
+    
+    
+        }
+        
+    }
+    
+
   
 window.addEventListener('beforeunload', leaveChannel)
 
 document.getElementById('camera-btn').addEventListener('click', toggleCamera)
 document.getElementById('mic-btn').addEventListener('click', toggleMic)
+document.getElementById('screen-btn').addEventListener('click',screenShare)
 
 init()
