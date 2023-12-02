@@ -141,13 +141,7 @@ a {
   align-items: center;
 }
 
-#members__button,
-#chat__button {
-  display: none;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-}
+
 
 #members__button:hover svg > path,
 #chat__button:hover svg,

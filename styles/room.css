@@ -22,6 +22,7 @@
   z-index: 999;
 }
 
+
 #members__count {
   background-color: #1d1d1c;
   padding: 7px 15px;
@@ -268,6 +269,7 @@
 @media (max-width: 768px) {
   #stream__container {
     width: 100%;
+    
   }
 
   .video__container{
