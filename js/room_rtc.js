@@ -6,8 +6,16 @@ if(!uid){
     sessionStorage.setItem('uid', uid)
 }
 
+let screenUid = sessionStorage.getItem('screenUid')
+if(!screenUid){
+    screenUid = String(Math.floor(Math.random() * 10000))
+    sessionStorage.setItem('screenUid', screenUid)
+}
+
+
 let token = null;
 let client;
+let screenClient;
 
 let rtmClient;
 let channel;
@@ -29,7 +37,9 @@ let localTracks = []
 let remoteUsers = {}
 
 let localScreenTracks;
+let screenSharingTracks;
 let sharingScreen = false;
+//let userIdInDisplayFrame;
 
 let joinRoomInit = async () => {
     rtmClient = await AgoraRTM.createInstance(APP_ID)
@@ -49,6 +59,12 @@ let joinRoomInit = async () => {
 
     client = AgoraRTC.createClient({mode:'rtc', codec:'vp8'})
     await client.join(APP_ID, roomId, token, uid)
+
+    // Create a new client for screen sharing
+     screenClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+    // Join the channel with the new client
+    await screenClient.join(APP_ID, roomId, token, screenUid);
 
     client.on('user-published', handleUserPublished)
     client.on('user-left', handleUserLeft)
@@ -73,6 +89,14 @@ let joinStream = async () => {
 
     localTracks[1].play(`user-${uid}`)
     await client.publish([localTracks[0], localTracks[1]])
+
+    // Create screen sharing tracks
+    screenSharingTracks = await AgoraRTC.createScreenVideoTrack()
+    // Play the screen sharing video
+        screenSharingTracks.play(`user-${screenUid}`);
+    // Publish the screen sharing tracks
+    await screenClient.publish([screenSharingTracks]);
+     
 }
 
 let switchToCamera = async () => {
@@ -168,51 +192,51 @@ let toggleCamera = async (e) => {
 
 let toggleScreen = async (e) => {
     let screenButton = e.currentTarget
-    let cameraButton = document.getElementById('camera-btn')
 
-    if(!sharingScreen){
-        sharingScreen = true
+    if (!sharingScreen) {
+        // Set flag to indicate screen sharing is active
+        sharingScreen = true;
 
-        screenButton.classList.add('active')
-        cameraButton.classList.remove('active')
-        cameraButton.style.display = 'none'
+      
+            await screenSharingTracks.setMuted(false)
+            screenButton.classList.add('active')
+        
 
-        localScreenTracks = await AgoraRTC.createScreenVideoTrack()
+        // Hide the existing video container
+        document.getElementById(`user-container-${screenUid}`).style.display = 'block';
 
-        document.getElementById(`user-container-${uid}`).remove()
-        displayFrame.style.display = 'block'
+        //document.getElementById('streams__container').insertAdjacentHTML('beforeend', screenPlayer);
+        document.getElementById(`user-container-${screenUid}`).addEventListener('click', expandVideoFrame);
 
-        let player = `<div class="video__container" id="user-container-${uid}">
-                <div class="video-player" id="user-${uid}"></div>
-            </div>`
+        
+    } else {
+        // Stop and close the screen sharing tracks
+        /*for (let i = 0; localScreenTracks.length > i; i++) {
+            localScreenTracks[i].stop();
+            localScreenTracks[i].close();
+        }
+        
+        // Unpublish the screen sharing tracks
+        await screenClient.unpublish([localScreenTracks[0], localScreenTracks[1]]);*/
 
-        displayFrame.insertAdjacentHTML('beforeend', player)
-        document.getElementById(`user-container-${uid}`).addEventListener('click', expandVideoFrame)
+        // Hide the existing video container
+        document.getElementById(`user-container-${screenUid}`).style.display = 'none';
 
-        userIdInDisplayFrame = `user-container-${uid}`
-        localScreenTracks.play(`user-${uid}`)
+        
+            await screenSharingTracks.setMuted(true)
+            screenButton.classList.remove('active')
+        
 
-        await client.unpublish([localTracks[1]])
-        await client.publish([localScreenTracks])
+        // Leave the channel with the screen sharing client
+        //await screenClient.leave();
 
-        let videoFrames = document.getElementsByClassName('video__container')
-        for(let i = 0; videoFrames.length > i; i++){
-            if(videoFrames[i].id != userIdInDisplayFrame){
-              videoFrames[i].style.height = '100px'
-              videoFrames[i].style.width = '100px'
-            }
-          }
+        // Remove the screen sharing user from the HTML
+        //document.getElementById(`user-container-${screenSharingTracks.getUserId()}`).remove();
 
-
-    }else{
-        sharingScreen = false 
-        cameraButton.style.display = 'block'
-        document.getElementById(`user-container-${uid}`).remove()
-        await client.unpublish([localScreenTracks])
-
-        switchToCamera()
+        // Set flag to indicate screen sharing is no longer active
+        sharingScreen = false;
     }
-}
+};
 
 let leaveStream = async (e) => {
     e.preventDefault()
