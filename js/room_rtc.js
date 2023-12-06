@@ -68,6 +68,9 @@ let joinRoomInit = async () => {
 
     client.on('user-published', handleUserPublished)
     client.on('user-left', handleUserLeft)
+
+    screenClient.on('user-published', handleUserPublished)
+    screenClient.on('user-left', handleUserLeft)
 }
 
 let joinStream = async () => {
@@ -256,6 +259,7 @@ let leaveStream = async (e) => {
     }
 
     document.getElementById(`user-container-${uid}`).remove()
+    await screenClient.leave();
 
     if(userIdInDisplayFrame === `user-container-${uid}`){
         displayFrame.style.display = null
